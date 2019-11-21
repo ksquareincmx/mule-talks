@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:java="http://www.mulesoft.org/schema/mule/java"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+	http://www.mulesoft.org/schema/mule/java http://www.mulesoft.org/schema/mule/java/current/mule-java.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+
+	<flow name="java_spring_moudles">
+
+		<http:listener doc:name="Listener" doc:id="48cea861-f686-4674-8648-68dafebea346" config-ref="HTTP_Listener_config" path="/java_spring"/>
+		<java:new class="java.util.HashMap" constructor="HashMap()"
+			target="newMap" targetValue="#[payload]"/>
+		
+		<logger message="#[payload]" level="INFO"/>
+		<ee:transform doc:name="Transform Message" doc:id="5b9b8962-6e08-4cf3-9190-f76f2fe839f8" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<java:invoke method="readMap(HashMap)" doc:name="Invoke"
+			doc:id="062367fe-47f1-477a-b641-4e3d1db79471" class="testone.Test"
+			instance="test">
+			<java:args>
+				#[arg0:payload]
+			</java:args>
+		</java:invoke>
+		<!-- <set-payload value="#[Java::invoke('com.foo.AppleEater', 'readMap(HashMap)', test, {chewingTime: 500})]"/> -->
+		<ee:transform doc:name="Transform Message" doc:id="4e90a6c7-c5e8-4c91-a1e6-786b58357dae" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		
+	</flow>
+
+</mule>

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd">
+	 <flow name="db-update" doc:id="736b7973-878e-4cb2-b81f-507fbdec755a" >
+		<db:update doc:name="db-update" doc:id="40f84bd2-c157-4748-8df1-c2d54f6cb1b6" config-ref="Database_Config" target="update_res" targetValue="#['Updated successfully']"> 
+			<db:sql >update public.products set updated_at = now(),price= :price  where name = :name</db:sql>
+			<db:input-parameters ><![CDATA[#[{'name': payload.name, 'price': payload.price}]]]></db:input-parameters>
+		</db:update>
+	</flow> 
+	<flow name="db-insert" doc:id="8380bd88-afa2-4a85-9725-9ec145a4f553" >
+		<db:insert doc:name="Insert" doc:id="72ea20b4-72d1-404f-a2d2-226683366f54" config-ref="Database_Config" target="result" targetValue="#['insertion suceess']">
+			<db:sql >insert into public.products(id,name,created_at,updated_at,price) values (nextval('prod_id'),:name,now(),now(),:price)</db:sql>
+			<db:input-parameters ><![CDATA[#[{'name':payload.name,
+			   'price': payload.price}]]]>
+		</db:input-parameters>
+		</db:insert>
+		
+	</flow>
+	<flow name="db-select-by-condition" doc:id="72db58b7-0b22-4489-83c2-5d1c9f29dc69">
+		<db:select doc:name="Select" doc:id="2a13d49e-dc9d-41e5-b2a0-73973f1ae6b4" config-ref="Database_Config" target="rowcount" targetValue="#[payload[0].count]">
+			<db:sql >select count(*) as count from  public.products where name= :name</db:sql>
+			 <db:input-parameters>#[{name : payload.name}</db:input-parameters>
+		</db:select>
+	</flow>
+	<flow name="db-select-all" doc:id="37ce5436-9042-41a0-a50f-889f48de2574" >
+		<db:select doc:name="Select" doc:id="12d21a7c-da3c-4751-93fb-3e9bcffc3fab" config-ref="Database_Config" >
+			<db:sql >select * from public.products</db:sql>
+		</db:select>
+	</flow>
+</mule>

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	
+	<flow name="orderProcessingFlow">
+  
+  <http:listener doc:name="Listener" doc:id="db37e7ec-c792-4496-a359-271b61a347e5" config-ref="HTTP_Listener_config" path="/enricher"/>
+		
+		<logger level="INFO" doc:name="Logger" doc:id="cb45ab71-6b78-4132-bfe9-a8f74d57ec13" message="#[payload.name]"/>
+		<!--  <flow-ref name="db-select-by-condition"  />  -->
+		
+		<set-payload value="#[output application/java --- payload]"/>
+		<db:select doc:name="Select" doc:id="ff91ab95-b09f-4526-a08f-86682c995cbe" config-ref="Database_Config" target="rowcount" targetValue="#[payload['count']]">
+			<db:sql >select count(*) as count from  public.products where name= :name</db:sql>
+			 <db:input-parameters>#[{name : payload.name}]</db:input-parameters>
+		</db:select>
+		<set-payload value="#['Rows are ' ++ vars.rowcount[0]]"/>
+		<logger level="INFO" doc:name="Logger" doc:id="ea2d0c9b-9123-4fd2-99d3-e2d35f3ac2da" message="#[vars.rowcount[0]]"/>
+		<!-- <ee:transform doc:name="Transform Message" doc:id="f2e52eca-9fd3-43cb-8ed3-c48288ad4883" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+
+payload map (item ,index) -> {
+price: item.price,
+ name: item.name
+}
+
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform> -->
+</flow>
+	</mule>

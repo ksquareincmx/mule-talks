@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:file="http://www.mulesoft.org/schema/mule/file"
+	xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:spring="http://www.mulesoft.org/schema/mule/spring"
+	xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/spring http://www.mulesoft.org/schema/mule/spring/current/mule-spring.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd">
+
+
+	<http:listener-config name="HTTP_Listener_config"
+		doc:name="HTTP Listener config" doc:id="99d21425-14ff-4065-a39d-7af1af8fe8ae">
+		<http:listener-connection host="0.0.0.0"
+			port="8082" />
+	</http:listener-config>
+	<http:request-config name="HTTP_Request_NCR_configuration"
+		doc:name="HTTP Request configuration" doc:id="99a2c0a6-46a6-4d39-b8fa-f19e21539d03">
+		<!-- <http:request-connection protocol="HTTPS" host="gateway.ncrplatform.com" 
+			/> -->
+		<http:request-connection host="localhost"
+			port="8082">
+			<!-- <http:authentication > <http:basic-authentication username="yalamanda" 
+				password="yalamanda" /> </http:authentication> -->
+		</http:request-connection>
+	</http:request-config>
+	<configuration-properties doc:name="Configuration properties"
+		doc:id="f1ff337d-45f5-49f3-bba7-43fb9bdd7fa9" file="demo.properties" />
+	<db:config name="Database_Config" doc:name="Database Config"
+		doc:id="9b7d7469-25bd-4aa7-832f-ce1967514c9b">
+		<db:generic-connection url="${db.url}"
+			driverClassName="${db.driver}" user="${db.user}" password="${db.pwd}" />
+	</db:config>
+	
+	<spring:config name="Spring_Config1" doc:name="Spring Config"
+		doc:id="ff445164-e469-494f-95bc-4da833d56329" files="spring-beans.xml" />
+
+	<file:config name="File_Config1" doc:name="File Config"
+		doc:id="f294c540-a819-410f-ab24-884092863869">
+		<file:connection workingDir="/home/yalamanda/Desktop/repeat/" />
+	</file:config>
+
+
+</mule>

@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:core="http://www.mulesoft.org/schema/mule/core"
+	xmlns:batch="http://www.mulesoft.org/schema/mule/batch" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/batch/current/mule-batch.xsd">
+	
+	
+	
+	<flow name="pos-trnsactions-pullFlow1" doc:id="427f3971-0bb9-4bdf-8c80-b9a847df564c">
+
+		<!-- Call the flow to request NCR api and map the data to store in db -->
+
+		<http:listener doc:name="Listener"
+			doc:id="e955ba88-4be0-45b1-8015-f24c7b736853" config-ref="HTTP_Listener_config"
+			path="/batch" allowedMethods="POST" />
+
+		<logger message="#[payload]" level="INFO"/>
+		<!-- Customers and transactions -->
+
+		<batch:job jobName="pos-trnsactions-pullBatch_Job" doc:id="4e9dfb7b-737a-4959-8e13-b3656de5790c">
+
+			<batch:process-records>
+
+				<batch:step name="customer_verify" doc:id="1c96a2ec-5864-4524-8a83-deceb60f42bb">
+
+					<flow-ref name="db-select-by-condition" />
+					<logger level="INFO" doc:name="Logger"
+						doc:id="c9818de6-3ed2-4911-abbb-8079aa15887f" message=" #[payload] +'count:'+ #[vars.rowcount]" />
+					<set-variable value="#[vars.rowcount]" variableName="rec_status" />
+				</batch:step>
+
+				<!-- Checking for record existence -->
+				<batch:step name="verifyrecord" doc:id="02fac863-0174-4d55-b126-da80eb67f162">
+					<flow-ref name="db-select-by-condition" />
+					<logger level="INFO" doc:name="Logger"
+						doc:id="227af137-2e95-4738-9ded-549447340580" message=" #[payload] +'count:'+ #[vars.rowcount]" />
+					<set-variable value="#[vars.rowcount]" variableName="rec_status" />
+				</batch:step>
+
+				<!-- If record not found insert in to DB -->
+				<batch:step name="insert_new_records" doc:id="51a2e8dd-9baa-49c6-aa9c-08f8000e1fab"
+					acceptExpression="#[vars.rec_status == 0]">
+					<batch:aggregator size="5"
+						doc:name="Insert_new_data_ Aggregator">
+
+						<flow-ref name="db-insert" />
+						<logger level="INFO" doc:name="Logger"
+							doc:id="9a79b705-e031-4e64-8767-76903b92d9b4" message="'whiell insert' #[vars.result]" />
+
+					</batch:aggregator>
+				</batch:step>
+				<!-- If record found update the Existing one -->
+				<batch:step name="update_existing_data" doc:id="c9de9be2-02fb-430c-a2d8-ce0d3812c2e2"
+					acceptExpression="#[vars.rec_status == 1]">
+					<batch:aggregator size="5">
+
+						<flow-ref name="db-update" />
+						<logger message="#[vars.update_res]" level="INFO" />
+					</batch:aggregator>
+				</batch:step>
+				<batch:step name="Failures" doc:id="e6684ccd-526f-4da1-a389-9b2ee0b93d6c"
+					acceptPolicy="ONLY_FAILURES">
+					<logger level="INFO" message="#[Batch::getStepExceptions()]" />
+				</batch:step>
+
+			</batch:process-records>
+			<batch:on-complete doc:name="ocomplete">
+				<logger level="INFO" doc:name="Logger"
+					doc:id="5b07e094-0a29-42b4-a7af-0c4bf9d3f607" message="#[payload]" />
+
+			</batch:on-complete>
+		</batch:job>
+	</flow>
+
+	<!-- Batch flow -->
+
+
+</mule>

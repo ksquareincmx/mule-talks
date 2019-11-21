@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:core="http://www.mulesoft.org/schema/mule/core" xmlns:os="http://www.mulesoft.org/schema/mule/os" xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd">
+	<salesforce:sfdc-config name="Salesforce_Config" doc:name="Salesforce Config" doc:id="ad703f86-98a2-4ae9-9482-6f0c59b53919" >
+		<salesforce:cached-basic-connection username="yalamanda@ksquareinc.com" password="y9MC70051~" securityToken="HqvB7nPMnQrro3KT5KttvALUs"/>
+	</salesforce:sfdc-config>
+	<http:listener-config name="HTTP_Listener_config1" doc:name="HTTP Listener config" doc:id="f778bc48-eea0-4b9a-a18e-fe2e3884a6b2" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<os:object-store name="Object_store" doc:name="Object store" doc:id="67bcf5bb-9221-4061-b572-06a13e8bda1f" maxEntries="100" entryTtl="120" />
+	<ee:object-store-caching-strategy name="Caching_Strategy1" doc:name="Caching Strategy" doc:id="6dfa2f19-73bb-4a61-becf-86a02e23a8f5" objectStore="Object_store" />
+	<flow name="cache_scopeFlow" doc:id="cd1775c1-5c28-4ed2-93f8-a1b1f0717bea" >
+		<http:listener doc:name="Listener" doc:id="e780d8e8-77b2-4851-b28d-31ea5873f969" config-ref="HTTP_Listener_config1" path="/cache">
+			<repeatable-in-memory-stream />
+		</http:listener>
+		<set-variable value="test" variableName="one" />
+		<ee:cache doc:name="Cache" doc:id="8bf254b1-04cd-4371-8d30-1b61fb7a8de5" cachingStrategy-ref="Caching_Strategy1" filterExpression="#[vars.one == 'test']">
+			<logger level="INFO" doc:name="Logger" doc:id="b0753767-1059-4892-9345-f7ba9b8c2003" />
+			<salesforce:query doc:name="Query" doc:id="571370fd-4eaf-4018-a7a5-bcec946bdbfd" config-ref="Salesforce_Config">
+			<salesforce:salesforce-query >SELECT Id, FirstName, LastName, Email, Phone from Contact</salesforce:salesforce-query>
+			</salesforce:query>
+			<ee:transform doc:name="Transform Message" doc:id="1e75870d-4ee8-4a0b-9fe1-a4d1aa02a3ae">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload map(item,index) -> {
+ "id": item.Id,
+ "FirstName": item.FirstName
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<set-payload value="#[payload]"/>
+		</ee:cache>
+		
+	</flow>
+</mule>

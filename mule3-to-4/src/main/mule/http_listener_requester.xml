@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:spring="http://www.mulesoft.org/schema/mule/spring"
+	xmlns:scripting="http://www.mulesoft.org/schema/mule/scripting"
+	xmlns:java="http://www.mulesoft.org/schema/mule/java" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:core="http://www.mulesoft.org/schema/mule/core" xmlns:file="http://www.mulesoft.org/schema/mule/file"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/spring http://www.mulesoft.org/schema/mule/spring/current/mule-spring.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/java http://www.mulesoft.org/schema/mule/java/current/mule-java.xsd
+http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mule/scripting/current/mule-scripting.xsd">
+
+
+
+	<flow name="test_repeatableFlow" doc:id="139c8d6e-4e33-4dd9-bd47-9ec41980c9cb">
+		<http:listener doc:name="Listener"
+			doc:id="92a7301b-9499-4d21-8d9a-083c583312d6" config-ref="HTTP_Listener_config"
+			path="/request_listener/{empid}">
+			<!-- <non-repeatable-stream />  -->
+		</http:listener>
+	<logger
+			message="#[app]"
+			level="INFO" />
+		<logger
+			message="#[payload] + 'payload is conumed' ++ #[message.attributes] ++ #[attributes.queryParams.'myname']"
+			level="INFO" />
+
+		<file:write doc:name="Write" doc:id="2a2c34ac-3330-4593-b470-ac2ef790d61f"
+			config-ref="File_Config1" path="test.txt" />
+		<set-variable variableName="mymap" value="#[payload]" />
+
+		<!-- Extract value from given payload and assing to variable in data wave 
+			script -->
+		<ee:transform doc:name="Transform Message"
+			doc:id="2912d440-9119-4175-9115-577d7572cfbe">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+			import java!testone::ConfigProps
+			---
+			{
+  			date: ConfigProps::extractOne(payload)
+  			
+			}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+
+
+	</flow>
+
+
+	<error-handler>
+		<on-error-continue
+			when="#[Java::isCausedBy(error.cause, 'java.lang.IllegalArgumentException')]">
+			<set-payload value="Negative prices are not allowed." />
+		</on-error-continue>
+		<on-error-continue
+			type="#[Java::isCausedBy(error.cause, 'java.lang.NullPointerException')]">
+			<set-payload value="There is no price." />
+		</on-error-continue>
+	</error-handler>
+
+	<flow name="pos-trnsactions-request" doc:id="164b04d8-372c-4313-8d89-5491c82283a0">
+
+		<http:listener doc:name="Listener"
+			doc:id="00e0e690-c34f-4b31-84dc-0744a15d9bfc" config-ref="HTTP_Listener_config"
+			path="/init" />
+		<set-variable variableName="myname" value="5000" />
+		<http:request method="POST" doc:name="Request"
+			doc:id="e1bb939a-1434-4553-9445-d4ed04f8f8ec" config-ref="HTTP_Request_NCR_configuration"
+			path="/request_listener/{empid}" outputMimeType="application/json">
+
+			<http:body><![CDATA[#[ output application/json --- {"name":"yalamanda","address":"hyderabad,india"}]]]></http:body>
+			<http:headers><![CDATA[#[output application/java
+							---
+								{
+									"nep-application-key" : ${ncr.application_key},
+									"content-type":"application/json"
+								}]]]>
+			</http:headers>
+			<http:uri-params><![CDATA[#[output application/java
+				---
+				{
+					"empid" : vars.myname
+				}]]]>
+			</http:uri-params>
+
+		</http:request>
+
+		
+	<logger message="#[payload] ++ 'from requester'"/>
+	</flow>
+
+
+</mule>

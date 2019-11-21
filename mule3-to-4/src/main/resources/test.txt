@@ -1,0 +1,14 @@
+
+#########Request listenere endpoint#########
+/request_listener/{empid}/?myname=yalamanda
+sample json
+
+{"name":"yalamanda","address":"hyderabad,india"}
+
+############# Java module vs spring module reference ####################
+/java_spring
+
+################BATCH ###################
+sample json batch example
+[{"name":"orange","price": 150},{"name":"yours", "price": 280}]  
+endpoint /batch
